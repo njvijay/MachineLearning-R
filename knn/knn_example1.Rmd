@@ -1,0 +1,80 @@
+---
+title: "Example 1 of K Nearest Neighbour Algorithm"
+author: "Vijayakumar Jawaharlal"
+date: "April 22, 2014"
+output: html_document
+---
+
+First example is about kNN algorithm applied on Smarket dataset available with ISLR library. Actually, this is the same example from "A introduction to statistical Learning" book.
+
+Load ISLR library and attach Smarket data set in the workspace
+```{r}
+library(ISLR)
+head(Smarket)
+attach(Smarket)
+```
+
+kNN algorithm is going to use Lag1 and Lag2 features to predict direction of the market. In order to evaluate the performance. 
+
+```{r}
+train <- Year < 2005
+test <- !train
+
+#kNN requires standardized columns because data comes with different types and measurement
+
+stan_data <- scale(Smarket[,c(2,3)]) ##Here 2,3 in the vector represent Lag1 and Lag2 features
+
+#Standardized variables with mean zero and standard deviation 1. Checking variance of standardized variables
+var(Smarket[,2])
+var(Smarket[,2])
+var(stan_data[,1])
+var(stan_data[,2])
+```
+kNN likes only standardized features. scale() function has been used to standardized variables. Standardized variable's mean would be 0 and sd would be 1. var() function is expected to give value 1 for standardized feature. To compare before and after standardization, var() function called multiple times.
+
+Now spliting training and testing data set for kNN
+
+```{r}
+train.X <- stan_data[train,]
+test.X <- stan_data[test,]
+train.Direction <- Direction[train]
+test.Direction <- Direction[test]
+#Seed must set in order to get reproducible result
+set.seed(1)
+```
+
+To run kNN algorithm, knn() function needs to be invoked. knn function is available in "class" library
+
+```{r}
+library(class)
+knn.pred <- knn(train=train.X,test = test.X,cl = train.Direction,k = 3)
+```
+Next step is evaluating performance of the model. Simple table() function can be used. I am going to use CrossTable function comes with gmodels library.
+
+```{r}
+library(gmodels)
+CrossTable(x=test.Direction,y=knn.pred,prop.chisq = FALSE)
+#Finding how many % of them are correctly predicted
+mean(knn.pred == test.Direction)
+```
+
+With k=3, % of correct prediction is 53%. Let us try to increase k value.
+
+```{r}
+set.seed(2)
+knn.pred <- knn(train=train.X,test = test.X,cl = train.Direction,k = 10)
+```
+Next step is evaluating performance of the model. Simple table() function can be used. I am going to use CrossTable function comes with gmodels library.
+
+```{r}
+CrossTable(x=test.Direction,y=knn.pred,prop.chisq = FALSE)
+#Finding how many % of them are correctly predicted
+mean(knn.pred == test.Direction)
+```
+It did not improve the correct prediction rate with k=10
+
+
+
+
+
+
