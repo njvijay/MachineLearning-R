@@ -1,0 +1,72 @@
+---
+title: "knn_example1_imprvd"
+author: "Vijayakumar Jawaharlal"
+date: "April 23, 2014"
+output: html_document
+---
+
+This is continuation of example 1. In this script, we want to implement few things to reduce "mean absolute error"
+
+* Choosing the sample random and include all available features
+* Using normalization instead of z-core standardization (used in example1) 
+
+Here is the function for normalization
+
+```{r}
+normalize <- function(x) {
+    norm <- ((x - min(x))/(max(x) - min(x)))
+    return (norm)
+}
+
+
+marketSample <- function(smarkt, test_pct = 20) {
+    train_pct = 100 - test_pct
+    #Seeding for reproducibility
+    set.seed(test_pct)
+    test_indx <- sample(nrow(smarkt), nrow(smarkt) * test_pct/100, replace=FALSE)
+    test.all <- smarkt[test_indx,]
+    
+    test.data <- test.all[,-9]
+    test.direction <- test.all$Direction
+    
+    #Prep. training data  which is noting but remaing test data
+    train.all <- smarkt[-test_indx,]
+    train.data <- train.all[,-9]
+    train.direction <- train.all$Direction
+    
+    rtrn_list <- list(testdata = test.data, testdir = test.direction, traindata = train.data, traindir = train.direction)
+    
+    return(rtrn_list)
+    
+}
+```
+
+Data prep using normalize function
+
+```{r}
+library(ISLR)
+input.norml <- as.data.frame(lapply(Smarket[,-9],normalize))
+input.norml$Direction <- Smarket$Direction
+
+temp_list <- marketSample(input.norml, 20)
+train.data <- temp_list$traindata
+train.dir <- temp_list$traindir
+
+test.data <- temp_list$testdata
+test.dir <- temp_list$testdir
+
+rm(temp_list)
+
+```
+
+Quickly evaluating knn algorithm
+
+```{r}
+library(class)
+knn.pred <- knn(train = train.data,test = test.data,cl = train.dir,k = 3)
+table(knn.pred,test.dir)
+mean(knn.pred == test.dir)
+```
+
+Above 80% cases are correctly predicted which is much greater than example1. This model is doing better. Will continue working on this tomorrow.
+
