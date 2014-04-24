@@ -165,6 +165,104 @@ knn.pred &lt;- knn(train=train.X,test = test.X,cl = train.Direction,k = 10)</cod
 mean(knn.pred == test.Direction)</code></pre>
 <pre><code>## [1] 0.4881</code></pre>
 <p>It did not improve the correct prediction rate with k=10</p>
+<p>Next, let us try to add more features to see the algorithm improvment. Year, today and Direction is not included in the list</p>
+<pre class="r"><code>stand_data2 = scale(Smarket[,2:7])
+var(stand_data2)</code></pre>
+<pre><code>##             Lag1      Lag2     Lag3      Lag4      Lag5   Volume
+## Lag1    1.000000 -0.026294 -0.01080 -0.002986 -0.005675  0.04091
+## Lag2   -0.026294  1.000000 -0.02590 -0.010854 -0.003558 -0.04338
+## Lag3   -0.010803 -0.025897  1.00000 -0.024051 -0.018808 -0.04182
+## Lag4   -0.002986 -0.010854 -0.02405  1.000000 -0.027084 -0.04841
+## Lag5   -0.005675 -0.003558 -0.01881 -0.027084  1.000000 -0.02200
+## Volume  0.040910 -0.043383 -0.04182 -0.048414 -0.022002  1.00000</code></pre>
+<pre class="r"><code>train.X2 &lt;- stand_data2[train,]
+test.X2 &lt;- stand_data2[test,]
+train.Direction2 &lt;- Direction[train]
+test.Direction2 &lt;- Direction[test]
+
+#Calling knn function
+knn.pred &lt;- knn(train = train.X2,test = test.X2,cl = train.Direction2,k = 3)
+
+#Evaluating the performance of the model
+CrossTable(x = knn.pred, y = test.Direction2, prop.chisq = FALSE)</code></pre>
+<pre><code>## 
+##  
+##    Cell Contents
+## |-------------------------|
+## |                       N |
+## |           N / Row Total |
+## |           N / Col Total |
+## |         N / Table Total |
+## |-------------------------|
+## 
+##  
+## Total Observations in Table:  252 
+## 
+##  
+##              | test.Direction2 
+##     knn.pred |      Down |        Up | Row Total | 
+## -------------|-----------|-----------|-----------|
+##         Down |        44 |        55 |        99 | 
+##              |     0.444 |     0.556 |     0.393 | 
+##              |     0.396 |     0.390 |           | 
+##              |     0.175 |     0.218 |           | 
+## -------------|-----------|-----------|-----------|
+##           Up |        67 |        86 |       153 | 
+##              |     0.438 |     0.562 |     0.607 | 
+##              |     0.604 |     0.610 |           | 
+##              |     0.266 |     0.341 |           | 
+## -------------|-----------|-----------|-----------|
+## Column Total |       111 |       141 |       252 | 
+##              |     0.440 |     0.560 |           | 
+## -------------|-----------|-----------|-----------|
+## 
+## </code></pre>
+<pre class="r"><code>##Finding how many % of them are correctly predicted
+mean(knn.pred == test.Direction2)</code></pre>
+<pre><code>## [1] 0.5159</code></pre>
+<pre class="r"><code>#Calling Knn function with k=10
+
+#Calling knn function
+knn.pred &lt;- knn(train = train.X2,test = test.X2,cl = train.Direction2,k = 10)
+
+#Evaluating the performance of the model
+CrossTable(x = knn.pred, y = test.Direction2, prop.chisq = FALSE)</code></pre>
+<pre><code>## 
+##  
+##    Cell Contents
+## |-------------------------|
+## |                       N |
+## |           N / Row Total |
+## |           N / Col Total |
+## |         N / Table Total |
+## |-------------------------|
+## 
+##  
+## Total Observations in Table:  252 
+## 
+##  
+##              | test.Direction2 
+##     knn.pred |      Down |        Up | Row Total | 
+## -------------|-----------|-----------|-----------|
+##         Down |        36 |        55 |        91 | 
+##              |     0.396 |     0.604 |     0.361 | 
+##              |     0.324 |     0.390 |           | 
+##              |     0.143 |     0.218 |           | 
+## -------------|-----------|-----------|-----------|
+##           Up |        75 |        86 |       161 | 
+##              |     0.466 |     0.534 |     0.639 | 
+##              |     0.676 |     0.610 |           | 
+##              |     0.298 |     0.341 |           | 
+## -------------|-----------|-----------|-----------|
+## Column Total |       111 |       141 |       252 | 
+##              |     0.440 |     0.560 |           | 
+## -------------|-----------|-----------|-----------|
+## 
+## </code></pre>
+<pre class="r"><code>##Finding how many % of them are correctly predicted
+mean(knn.pred == test.Direction2)</code></pre>
+<pre><code>## [1] 0.4841</code></pre>
+<p>There is no much improvment after adding more features as well.</p>
 <div class="references">
 
 </div>

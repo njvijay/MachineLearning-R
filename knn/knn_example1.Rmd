@@ -73,6 +73,42 @@ mean(knn.pred == test.Direction)
 ```
 It did not improve the correct prediction rate with k=10
 
+Next, let us try to add more features to see the algorithm improvment. Year, today and Direction is not included in the list
+
+```{r}
+stand_data2 = scale(Smarket[,2:7])
+var(stand_data2)
+train.X2 <- stand_data2[train,]
+test.X2 <- stand_data2[test,]
+train.Direction2 <- Direction[train]
+test.Direction2 <- Direction[test]
+
+#Calling knn function
+knn.pred <- knn(train = train.X2,test = test.X2,cl = train.Direction2,k = 3)
+
+#Evaluating the performance of the model
+CrossTable(x = knn.pred, y = test.Direction2, prop.chisq = FALSE)
+
+##Finding how many % of them are correctly predicted
+mean(knn.pred == test.Direction2)
+
+#Calling Knn function with k=10
+
+#Calling knn function
+knn.pred <- knn(train = train.X2,test = test.X2,cl = train.Direction2,k = 10)
+
+#Evaluating the performance of the model
+CrossTable(x = knn.pred, y = test.Direction2, prop.chisq = FALSE)
+
+##Finding how many % of them are correctly predicted
+mean(knn.pred == test.Direction2)
+```
+
+There is no much improvment after adding more features as well.
+
+
+
+
 
 
 
