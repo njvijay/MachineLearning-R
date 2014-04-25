@@ -1,0 +1,118 @@
+---
+title: "kNN example 1 - Normalizing features and applying resampling methods"
+author: "Vijayakumar Jawaharlal"
+date: "April 23, 2014"
+output: html_document
+---
+
+This is continuation of example 1 improved. In this script, I want to try various resampling method to use *optimal K value*. Following two resamples methods are going to be used in this script
+
+* Cross Validation
+* Boot Strap
+* Using fixed sample
+
+Package *e1071* is going to be used for resampling methods. This package has bunch tools to tune various parameters to find out best performance from the model. It has very good support functions for svm, random forest, decision tree, knn etc., Refer help pages for e1071 package.
+
+tune.knn() function is going to be used for resampling. I may need to use tune.control(), summary and plot to depict the results from tune.knn()
+
+```{r}
+normalize <- function(x) {
+    norm <- ((x - min(x))/(max(x) - min(x)))
+    return (norm)
+}
+
+
+marketSample <- function(smarkt, test_pct = 20) {
+    train_pct = 100 - test_pct
+    #Seeding for reproducibility
+    set.seed(test_pct)
+    test_indx <- sample(nrow(smarkt), nrow(smarkt) * test_pct/100, replace=FALSE)
+    test.all <- smarkt[test_indx,]
+    
+    test.data <- test.all[,-9]
+    test.direction <- test.all$Direction
+    
+    #Prep. training data  which is noting but remaing test data
+    train.all <- smarkt[-test_indx,]
+    train.data <- train.all[,-9]
+    train.direction <- train.all$Direction
+    
+    rtrn_list <- list(testdata = test.data, testdir = test.direction, traindata = train.data, traindir = train.direction)
+    
+    return(rtrn_list)
+    
+}
+```
+
+Data prep using normalize function
+
+```{r}
+library(ISLR)
+input.norml <- as.data.frame(lapply(Smarket[,-9],normalize))
+input.norml$Direction <- Smarket$Direction
+
+full.data <- input.norml[,-9]
+full.dir <- input.norml[,9]
+
+temp_list <- marketSample(input.norml, 20)
+train.data <- temp_list$traindata
+train.dir <- temp_list$traindir
+
+test.data <- temp_list$testdata
+test.dir <- temp_list$testdir
+
+rm(temp_list)
+
+```
+
+Let us apply various resampling method to find out optimal K.
+
+Let us go with k-fold cross validation to find out the optimal k value for knn()
+
+```{r}
+library(e1071)
+#Full Data set can be used for cross validation
+knn.cross <- tune.knn(x = full.data, y = full.dir, k = 1:20,tunecontrol=tune.control(sampling = "cross"), cross=10)
+#Summarize the resampling results set
+summary(knn.cross)
+#Plot the error rate 
+plot(knn.cross)
+```
+
+Resampling using bootstraping 
+
+```{r}
+#Full Data set can be used for cross validation
+knn.boot <- tune.knn(x = full.data, y = full.dir, k = 1:20,tunecontrol=tune.control(sampling = "boot") )
+#Summarize the resampling results set
+summary(knn.boot)
+#Plot the error rate 
+plot(knn.boot)
+```
+
+Resampling fixed set
+```{r}
+#Full Data set can be used for cross validation
+knn.fix <- tune.knn(x = full.data, y = full.dir, k = 1:20,tunecontrol=tune.control(sampling = "fix") , fix=10)
+#Summarize the resampling results set
+summary(knn.fix)
+#Plot the error rate 
+plot(knn.fix)
+```
+
+Based on 10 fold cross validation, k=20 is better and k=19 from bootstrap. I want to check both K=19 and 20
+
+```{r}
+library(class)
+knn.pred <- knn(train = train.data,test = test.data,cl = train.dir,k = 19)
+table(knn.pred,test.dir)
+mean(knn.pred == test.dir)
+
+knn.pred1 <- knn(train = train.data,test = test.data,cl = train.dir,k = 20)
+table(knn.pred1,test.dir)
+mean(knn.pred1 == test.dir)
+```
+
+Prediction accuracy is now about 88 to 90%. This is much much improved result than previous script "knn_example1_imprvd"
+
+

@@ -1,7 +1,7 @@
 ---
-title: "knn_example1_imprvd"
+title: "kNN example 1 - Normalize features"
 author: "Vijayakumar Jawaharlal"
-date: "April 23, 2014"
+date: "April 24, 2014"
 output: html_document
 ---
 
@@ -68,5 +68,4 @@ table(knn.pred,test.dir)
 mean(knn.pred == test.dir)
 ```
 
-Above 80% cases are correctly predicted which is much greater than example1. This model is doing better. Will continue working on this tomorrow.
-
+Above 80% cases are correctly predicted which is much greater than example1. 
