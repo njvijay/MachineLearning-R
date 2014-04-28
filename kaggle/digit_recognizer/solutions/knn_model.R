@@ -1,8 +1,15 @@
 library(e1071)
 library(class)
 
+require(RCurl)
+
+#Training data online - https://app.box.com/s/gkadabsw7s7qhkqhgvlx
+#test data online - https://app.box.com/s/nqcnbv1qtdr4v181lcsd
+
 setwd("/Users/njvijay/big_data/Github/MachineLearning-R/kaggle/digit_recognizer/solutions")
-train <- read.csv('../data/train.csv', header=TRUE)
+#train <- read.csv('../data/train.csv', header=TRUE)
+train_url <- getURL("https://app.box.com/s/gkadabsw7s7qhkqhgvlx")
+train <- read.csv(textConnection(train_url), header=TRUE)
 test <- read.csv('../data/test.csv', header=TRUE)
 
 train_knn.pixel <- train[,-1]
