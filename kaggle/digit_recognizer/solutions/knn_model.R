@@ -1,16 +1,19 @@
 library(e1071)
 library(class)
+library(RCurl)
 
-require(RCurl)
+#setwd("/home/njvijay/machinelearning/kaggle/digit_recog")
+#train <- read.csv('./data/train.csv', header=TRUE)
+#test <- read.csv('./data/test.csv', header=TRUE)
 
-#Training data online - https://app.box.com/s/gkadabsw7s7qhkqhgvlx
-#test data online - https://app.box.com/s/nqcnbv1qtdr4v181lcsd
+#Dataset is huge. They cannot be stored locally for github. Going to pull both training and test
+#dataset from a website
+mycsv.connection <- getURL(url = "http://kaggle.sowmiyan.com/digit_recog/train.csv")
+train <- read.csv(textConnection(object = mycsv.connection),header=TRUE)
 
-setwd("/Users/njvijay/big_data/Github/MachineLearning-R/kaggle/digit_recognizer/solutions")
-#train <- read.csv('../data/train.csv', header=TRUE)
-train_url <- getURL("https://app.box.com/s/gkadabsw7s7qhkqhgvlx")
-train <- read.csv(textConnection(train_url), header=TRUE)
-test <- read.csv('../data/test.csv', header=TRUE)
+mycsv.connection <- getURL(url = "http://kaggle.sowmiyan.com/digit_recog/test.csv")
+test <- read.csv(textConnection(object = mycsv.connection),header=TRUE)
+
 
 train_knn.pixel <- train[,-1]
 train_knn.digit <- train[,1]
@@ -25,6 +28,14 @@ knn.pred <- knn(train = train_knn.pixel, test = test,cl = train_knn.digit,k = 10
 
 date()
 
-summary(train_knn.cross)
-plot(train_knn.cross)
+results <- (0:9)[knn.pred]
 
+rownum <- 1:length(results)
+
+results.df <- data.frame(ImageId = rownum,Label = results)
+
+#write(x=results,file="./results/knn_model.csv",ncolumns=1)
+write.table(x=results.df,file="./results/knn_model.csv",sep=",",col.names=TRUE, row.names=FALSE,quote=FALSE)
+
+#summary(train_knn.cross)
+#plot(train_knn.cross)
