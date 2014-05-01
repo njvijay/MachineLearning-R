@@ -1,0 +1,140 @@
+---
+title: "kNN Using caret R package"
+author: "Vijayakumar Jawaharlal"
+date: "April 29, 2014"
+output: html_document
+---
+
+Recently I've got familiar with caret package. Caret is a great R package which provides general interface to nearly 150 ML algorithms. It also provides great functions to sample the data (for training and testing), preprocessing, evaluating the model etc.,
+
+To get familiar with caret package, please check following URLs
+
+https://www.youtube.com/watch?v=7Jbb2ItbTC4
+http://http://caret.r-forge.r-project.org
+http://cran.r-project.org/web/packages/caret/vignettes/caret.pdf
+
+I am going to use same dataset from previous examples. Intention of this excercise is to get familiar with caret package
+
+##Sampling
+
+```{r}
+library(ISLR)
+library(caret)
+
+set.seed(300)
+#Spliting data as training and test set. Using createDataPartition() function from caret
+indxTrain <- createDataPartition(y = Smarket$Direction,p = 0.75,list = FALSE)
+training <- Smarket[indxTrain,]
+testing <- Smarket[-indxTrain,]
+
+#Checking distibution in origanl data and partitioned data
+prop.table(table(training$Direction)) * 100
+prop.table(table(testing$Direction)) * 100
+prop.table(table(Smarket$Direction)) * 100
+```
+
+creteDataParition function creates sample very effortlessly. We don't need to write complex function like previous example
+
+##Preprocessing
+
+kNN requires variables to be normalized or scaled. caret provides facility to preprocess data. I am going to choose centring and scaling
+
+```{r}
+trainX <- training[,names(training) != "Direction"]
+preProcValues <- preProcess(x = trainX,method = c("center", "scale"))
+preProcValues
+```
+
+##Training and train control
+
+```{r}
+set.seed(400)
+ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
+knnFit <- train(Direction ~ ., data = training, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+
+#Output of kNN fit
+knnFit
+
+#Plotting yields Number of Neighbours Vs accuracy (based on repeated cross validation)
+plot(knnFit)
+
+knnPredict <- predict(knnFit,newdata = testing )
+#Get the confusion matrix to see accuracy value and other parameter values
+confusionMatrix(knnPredict, testing$Direction )
+mean(knnPredict == testing$Direction)
+
+#Now verifying 2 class summary function
+
+ctrl <- trainControl(method="repeatedcv",repeats = 3,classProbs=TRUE,summaryFunction = twoClassSummary)
+knnFit <- train(Direction ~ ., data = training, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+
+#Output of kNN fit
+knnFit
+
+#Plotting yields Number of Neighbours Vs accuracy (based on repeated cross validation)
+plot(knnFit, print.thres = 0.5, type="S")
+
+knnPredict <- predict(knnFit,newdata = testing )
+#Get the confusion matrix to see accuracy value and other parameter values
+confusionMatrix(knnPredict, testing$Direction )
+mean(knnPredict == testing$Direction)
+
+```
+
+Trying to plot ROC curve to check specificity and sensitivity
+
+```{r}
+library(pROC)
+knnPredict <- predict(knnFit,newdata = testing , type="prob")
+knnROC <- roc(testing$Direction,knnPredict[,"Down"], levels = rev(testing$Direction))
+knnROC
+plot(knnROC, type="S", print.thres= 0.5)
+```
+
+
+##Applying Random Forest to see the performance improvement
+
+```{r}
+set.seed(400)
+ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
+
+# Random forrest
+rfFit <- train(Direction ~ ., data = training, method = "rf", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+
+rfFit
+
+plot(rfFit)
+
+rfPredict <- predict(rfFit,newdata = testing )
+confusionMatrix(rfPredict, testing$Direction )
+mean(rfPredict == testing$Direction)
+
+#With twoclasssummary
+ctrl <- trainControl(method="repeatedcv",repeats = 3,classProbs=TRUE,summaryFunction = twoClassSummary)
+# Random forrest
+rfFit <- train(Direction ~ ., data = training, method = "rf", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+
+rfFit
+
+plot(rfFit)
+
+#Trying plot with some more parameters
+plot(rfFit, print.thres = 0.5, type="S")
+
+rfPredict <- predict(rfFit,newdata = testing )
+confusionMatrix(rfPredict, testing$Direction )
+mean(rfPredict == testing$Direction)
+
+
+```
+
+Ploting ROC curve
+
+```{r}
+library(pROC)
+rfPredict <- predict(rfFit,newdata = testing , type="prob")
+rfROC <- roc(testing$Direction,rfPredict[,"Down"], levels = rev(testing$Direction))
+rfROC
+plot(rfROC, type="S", print.thres= 0.5)
+```
+#Yet to learn about interpreting ROC curve :)
