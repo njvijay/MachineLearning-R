@@ -1,0 +1,89 @@
+---
+title: "Wisconsin Breast Cancer Diagnostic Data Set"
+author: "Vijayakumar Jawaharlal"
+date: "May 3, 2014"
+output: html_document
+---
+
+This is the sample data set used in "Machine Learning with R" book to teach kNN algorithm.
+
+##Data exploration
+
+```{r}
+library(caret)
+setwd("/Users/njvijay/big_data/Github/MachineLearning-R/knn/data")
+srcData <- read.csv("wisc_bc_data.csv")
+str(srcData)
+#Removing id field which is not required for prediction.
+wcData <- srcData[,-1]
+table(wcData$diagnosis)
+prop.table(table(wcData$diagnosis))
+
+```
+
+It has about 569 observations(biopsies) with 32 variables. diagnosis is the response variable with 2 levels B-begnin and M - melignant. All of the predictors are quantitative with different measurement. These predictors needs to be standardize before applying kNN algorithm.
+
+##Data Spliting
+Reserve 20% data for validation. 80% for cross validation and model building
+```{r}
+set.seed(456)
+idx <- createDataPartition(wcData$diagnosis,p = 0.8,list = FALSE)
+train <- wcData[idx,]
+test <- wcData[-idx,]
+#Checking proportion of data spliting
+prop.table(table(train$diagnosis))
+prop.table(table(test$diagnosis))
+```
+% is maintained in the data spliting
+
+##Setting parallelism
+
+```{r}
+library(doMC)
+registerDoMC(cores = 3)
+
+```
+
+Building the model
+
+```{r}
+set.seed(400)
+ctrl <- trainControl(method="repeatedcv",repeats = 3,classProbs=TRUE,summaryFunction = twoClassSummary)
+knnFit <- train(diagnosis ~ ., data = train, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 31)
+knnFit
+plot(knnFit)
+```
+
+Validate the model on the test data
+
+```{r}
+knnPredict <- predict(knnFit,newdata = test)
+#Get the confusion matrix to see accuracy value and other parameter values
+confusionMatrix(knnPredict, test$diagnosis )
+```
+
+Measuring performance using ROCR package
+
+```{r}
+knnperfPredict <- predict(knnFit,newdata = test,type="prob")
+knnperfPredictB <- knnperfPredict$B
+#Creating dummy vars
+testdiagnosis <- ifelse(test$diagnosis == 'B', 1,0)
+
+library(ROCR)
+perfprod <- prediction(knnperfPredictB, testdiagnosis)
+perf <- performance(perfprod,"tpr","fpr")
+plot(perf)
+
+perf <- performance(perfprod,"sens","spec")
+plot(perf)
+
+```
+
+ROCR supports only binary classification. It is a limitation.
+
+
+
+
+
+
