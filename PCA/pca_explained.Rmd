@@ -1,0 +1,158 @@
+# Principal Component Analysis (PCA)
+In this document, we are going to see how to analyse multivariate data set using principal component analysis, in short PCA. I am not going to explain match behind PCA, instead, how to achieve it using R. Intention of the tutorial is, taking 2 datasets, USArrests & iris, apply PCA on them. In fact, both data sets do not have lot of variables to demonstrate dimension reduction in grand way. Still those data sets are good enough to understand how PCA works.
+<p>
+Before jump into PCA logic in R, I am going to define a common function which is required to display all PCA related plots in 2X2 grid. 
+
+```{r pcaCharts}
+pcaCharts <- function(x) {
+    x.var <- x$sdev ^ 2
+    x.pvar <- x.var/sum(x.var)
+    print("proportions of variance:")
+    print(x.pvar)
+    
+    par(mfrow=c(2,2))
+    plot(x.pvar,xlab="Principal component", ylab="Proportion of variance explained", ylim=c(0,1), type='b')
+    plot(cumsum(x.pvar),xlab="Principal component", ylab="Cumulative Proportion of variance explained", ylim=c(0,1), type='b')
+    screeplot(x)
+    screeplot(x,type="l")
+    par(mfrow=c(1,1))
+}
+```
+
+
+
+### Analyzing USArrests dataset
+
+It is mandatory that data should be scaled and centered. Centering and scaling can be applied first before calling PCA R functions or PCA function (prcomp) itself has center and scale parameter. In this excercise, we are going to use prcomp parameter for preprocessing.
+<p>
+_italic_
+centering:
+Scaling
+_italic_
+
+USArrests data sets comes with basic dataset with 4 variables. Using PCA, we are going to find linear combinations of the variables that maxmimal variance and mutually uncorrelated.
+
+```{r viewdata}
+head(USArrests)
+```
+
+Applying PCA using R function
+
+```{r}
+arrests.pca <- prcomp(USArrests,center = TRUE,scale. = TRUE)
+#Checking output of pca. prcomp function returns standard deviation (sdev), rotation and loadings.
+names(arrests.pca)
+
+print(arrests.pca)
+```
+Above pca output returns 4 principal components as rotation. Basically number of principal components in rotation is equal to number variables in the dataset.
+
+Next step is to identify coverage of variance in dataset by individual principal components. summary() function can be used or scree plot can be used to explain the variance.
+
+```{r summrypca}
+summary(arrests.pca)
+```
+
+From the the summary, we can undersand PC1 explains 62% of variance and PC2 explains 24% so on. Usually Principal components which explains about 95% variance can be considered for models. Summary also yields cumulative proportion of the principal components.
+
+Best thing is, plot PCA using various types of scree plot. Above declared 'pcaCharts' function invokes various forms of scree plot
+
+```{r screeplot}
+pcaCharts(arrests.pca)
+```
+
+Next, biplot illustrate the use of PCA on the USArrests data sets.
+
+```{r plainbiplot}
+biplot(arrests.pca,scale=0, cex=.7)
+```
+
+It seems PCA output concentrated more on negative side. Following set of R code will flip the numbers
+
+```{r flip}
+pca.out <- arrests.pca
+pca.out$rotation <- -pca.out$rotation
+pca.out$x <- -pca.out$x
+biplot(pca.out,scale=0, cex=.7)
+```
+
+**Interpretation of biplot :** For each of 50 stats in the USA, the data set contains the number of arrests per 100,000 residents for each three crimes: Assault, Murder and Rape. Also urbanpop represents percent of the population in each state living in urban areas. The plot shows the first two principal component scores and the loading verctors in a singple biplot display.
+
+The loadings are given below:
+
+```{r displayloadings}
+pca.out$rotation[,1:2]
+```
+
+From the plot as wells from the above loadings what we can understand is, first loading vector places approximately equal weight on Assault, Murder and Rape, with much less weight on urbanpop. Hence this component roughly corresponds to a measure of overall rates of serious crimes.
+
+The second loading vector places most of it weight on Urbanpop and much less weight on the other 3 features. Hence, this component roughly corresponds to the level of urbanization of the state. Overall, we see that the crime-related varaibales are located close to each other, and that the urbanpop variable is far from other three. This indicates hat the crime related variables are correlated with each other-States with high murder rates tend to had high assault and rape rates. Urabnpop variable is less correlated with the other three.
+
+There is package called 'ggbiplot' available in github which yields much better illustration on PCA.
+
+```{r ggbiplotusarrests}
+#library(devtools)
+#install_github("ggbiplot","vqv")
+library(ggbiplot)
+g <- ggbiplot(pca.out, obs.scale = 1, var.scale = 1, labels=row.names(USArrests),
+              ellipse = TRUE, 
+              circle = TRUE)
+g <- g + scale_color_discrete(name = '')
+g <- g + theme(legend.direction = 'horizontal', 
+               legend.position = 'top')
+print(g)
+
+```
+
+
+### Analyzing iris dataset
+
+Iris data set has 4 contineous variables, describe species characteristics and one categorical variable to represent species. Iris dataset has 150 observations
+
+```{r irisdatacheck}
+head(iris)
+str(iris)
+```
+
+PCA is an unsupervised learning. Species-categorical does not need to be included for pca analysis. Rest of the variables can be used for pca analysis.
+```{r irisprep}
+iris.cntn <- iris[,-5]
+iris.cat <- iris[,5]
+```
+
+Next step is, applying preprocessing from caret. Preprocessing involves centering, scaling and skewness removal. caret package is used for preprocessing.
+
+```{r irispreproc}
+library(caret)
+iris.trans <- preProcess(x = iris.cntn,method = c("BoxCox","center","scale"))
+iris.trans
+iris.preproc <- predict(iris.trans,newdata = iris.cntn)
+```
+
+Let us apply PCA on transformed iris dataset
+
+```{r irispca}
+iris.pca <- prcomp(iris.preproc,center = FALSE)
+iris.pca
+summary(iris.pca)
+pcaCharts(iris.pca)
+```
+
+PC1 and PC2 cover 95% of variability in the data. PCA charts also confirms that (Look for elbow shape)
+
+Next, we will go with biplot to see what goes with each principal component.
+
+```{r irisbiplot}
+#Switching off scale factors (var.scale and scale variables)
+g <- ggbiplot(iris.pca,scale = 0, var.scale = 0, labels=iris.cat,groups = iris.cat,
+              ellipse = TRUE, 
+              circle = TRUE)
+g <- g + scale_color_discrete(name = '')
+g <- g + theme(legend.direction = 'horizontal', 
+               legend.position = 'top')
+print(g)
+```
+
+
+
+

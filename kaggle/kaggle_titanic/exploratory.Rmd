@@ -1,0 +1,123 @@
+---
+title: "Titanic data set Exploratory Data Analysis"
+author: "Vijayakumar Jawaharlal"
+date: "July 18, 2014"
+output: html_document
+---
+
+Listing down all the required functions for data analysis
+
+```{r function_dcal}
+
+# This is to read titanic train and test data set
+read_data <- function(URLparam, test=FALSE)
+{ 
+    library(RCurl)
+    library(Amelia)
+    library(plyr)
+    library(magrittr)
+    library(dplyr)
+    library(stringr)
+    library(e1071)
+    library(caret)
+    
+    
+    url <- getURL(URLparam)
+    missing.types <- c("NA", "")
+    if (test)
+        column.types <- c('integer',   # PassengerId
+                            'factor',    # Pclass
+                            'character', # Name
+                            'factor',    # Sex
+                            'numeric',   # Age
+                            'integer',   # SibSp
+                            'integer',   # Parch
+                            'character', # Ticket
+                            'numeric',   # Fare
+                            'character', # Cabin
+                            'factor'     # Embarked
+                            ) else 
+        column.types <- c('integer',   # PassengerId
+                            'factor',    # Survived 
+                            'factor',    # Pclass
+                            'character', # Name
+                            'factor',    # Sex
+                            'numeric',   # Age
+                            'integer',   # SibSp
+                            'integer',   # Parch
+                            'character', # Ticket
+                            'numeric',   # Fare
+                            'character', # Cabin
+                            'factor'     # Embarked
+                            )
+    data.csv <- read.csv(textConnection(object = url),header = TRUE,colClasses = column.types, na.strings=missing.types)
+    return (data.csv)
+}
+
+summary_n_missmap <- function(train, test) {
+    print("Summary of training set")
+    print("===========================")
+    print(summary(train))
+    print("Summary of test set")
+    print("===========================")
+    print(summary(test))
+    
+    par(mfrow = c(2,1))
+    missmap(obj = train,main = "Mismap for Training set",legend = FALSE)
+    missmap(obj = test,main = "Mismap for test set",legend = FALSE)
+    par(mfrow = c(1,1))   
+    
+    #Get a report on missing values in all columns
+    
+    #Missing values in training set
+    print("Missing values in train set")
+    print("====================================")
+    print(train %>% sapply(function(x) sum(is.na(x))))
+    
+    print("Missing values in train set")
+    print("====================================")
+    #Missing values in test set
+    print(test %>% sapply(function(x) sum(is.na(x))))
+}
+
+```
+
+Load and Transform
+
+```{r}
+train <- read_data("http://kaggle.sowmiyan.com/titanic/train.csv")
+train$type <- "train"
+
+test <-  read_data("http://kaggle.sowmiyan.com/titanic/test.csv",test = TRUE)
+test$type <- "test"
+test$Survived <- NA
+
+complete <- rbind(train ,test)
+summary(complete)
+
+summary_n_missmap(train,test)
+
+
+```
+Obseravations: There are many missing values in Cabin, Age in training set. It is also true for test; additionaly one fare value is missing. There are minimal values missing in embarked
+
+Split names and get title of the names which cann't be used
+```{r splitname}
+tempnames <- matrix(unlist(str_split(complete$Name,", ")),ncol=2,byrow = T)
+tempnames[,2] <- gsub(pattern = ' +',replacement = "",x = tempnames[,2])
+tempnames.title <- str_split(tempnames[,2],"\\.")
+title <- unlist(llply(.data = tempnames.title, function(x) x[1]))
+complete$title <- factor(title)
+rm(tempnames)
+rm(tempnames.title)
+barplot(table(complete %>% filter(type == "train") %>% select(Survived, title)), main="Survival Vs Name title")
+hist(complete$Age)
+
+
+```
+
+```{r imputingage}
+
+```
+
+
